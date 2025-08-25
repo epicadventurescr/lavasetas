@@ -3,18 +3,19 @@
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
-import { ShoppingCart, MapPin, Phone, MessageCircle, Minus, Plus } from "lucide-react"
+import { ShoppingCart, MapPin, Phone, MessageCircle, Minus, Plus, Languages } from "lucide-react"
 import { useState } from "react"
 import Image from "next/image"
 import { MushroomChatbot } from "@/components/mushroom-chatbot"
+import { useLanguage } from "@/contexts/language-context"
 
 // Product data with seasonal pricing
 const products = [
   {
     id: 1,
-    name: "Grey Oyster Mushrooms",
+    nameKey: "product.greyOyster.name",
     scientificName: "Pleurotus ostreatus",
-    description: "Delicate, earthy flavor with a tender texture. Perfect for stir-fries and soups.",
+    descriptionKey: "product.greyOyster.description",
     price: 3500, // Costa Rican Colones
     seasonalPrice: 3000,
     inSeason: true,
@@ -23,9 +24,9 @@ const products = [
   },
   {
     id: 2,
-    name: "White Oyster Mushrooms",
+    nameKey: "product.whiteOyster.name",
     scientificName: "Pleurotus ostreatus var. florida",
-    description: "Mild, sweet flavor with firm texture. Excellent grilled or sautéed.",
+    descriptionKey: "product.whiteOyster.description",
     price: 3800,
     seasonalPrice: 3200,
     inSeason: false,
@@ -34,9 +35,9 @@ const products = [
   },
   {
     id: 3,
-    name: "Lion's Mane Mushrooms",
+    nameKey: "product.lionsMane.name",
     scientificName: "Hericium erinaceus",
-    description: "Unique seafood-like texture with a savory umami flavor. Great meat substitute.",
+    descriptionKey: "product.lionsMane.description",
     price: 4500,
     seasonalPrice: 4000,
     inSeason: true,
@@ -47,6 +48,7 @@ const products = [
 
 export default function LavaSetasStore() {
   const [cart, setCart] = useState<{ [key: number]: number }>({})
+  const { language, toggleLanguage, t } = useLanguage()
 
   const addToCart = (productId: number) => {
     setCart((prev) => ({
@@ -87,17 +89,17 @@ export default function LavaSetasStore() {
     const cartItems = getCartItems()
     const total = getCartTotal()
 
-    let message = "¡Hola! Me gustaría hacer un pedido de Lava Setas:\n\n"
+    let message = `${t("whatsapp.greeting")}\n\n`
 
     cartItems.forEach(({ product, quantity }) => {
       if (product) {
         const price = product.inSeason ? product.seasonalPrice : product.price
-        message += `• ${product.name} x${quantity} - ₡${(price * quantity).toLocaleString()}\n`
+        message += `• ${t(product.nameKey)} x${quantity} - ₡${(price * quantity).toLocaleString()}\n`
       }
     })
 
-    message += `\nTotal: ₡${total.toLocaleString()}\n\n`
-    message += "Por favor confirmen disponibilidad y tiempo de entrega en El Castillo. ¡Gracias!"
+    message += `\n${t("whatsapp.total")} ₡${total.toLocaleString()}\n\n`
+    message += t("whatsapp.confirmation")
 
     return encodeURIComponent(message)
   }
@@ -114,18 +116,28 @@ export default function LavaSetasStore() {
         <div className="container mx-auto px-4 py-4">
           <div className="flex items-center justify-between">
             <div className="flex items-center space-x-3">
-              <div className="w-10 h-10 bg-primary rounded-full flex items-center justify-center">
-                <span className="text-primary-foreground font-bold text-lg">🍄</span>
+              <div className="w-10 h-10 bg-primary rounded-full flex items-center justify-center overflow-hidden">
+                <Image
+                  src="/fresh-white-oyster-mushrooms-pleurotus-florida-edi.png"
+                  alt="Lava Setas Logo - White Oyster Mushroom"
+                  width={32}
+                  height={32}
+                  className="object-cover rounded-full"
+                />
               </div>
               <div>
                 <h1 className="text-2xl font-bold text-foreground">Lava Setas</h1>
-                <p className="text-sm text-muted-foreground">El Castillo, Costa Rica</p>
+                <p className="text-sm text-muted-foreground">{t("header.location")}</p>
               </div>
             </div>
             <div className="flex items-center space-x-2">
+              <Button variant="ghost" size="sm" onClick={toggleLanguage} className="flex items-center space-x-1">
+                <Languages className="w-4 h-4" />
+                <span className="text-sm font-medium">{language.toUpperCase()}</span>
+              </Button>
               <Badge variant="secondary" className="hidden sm:flex">
                 <MapPin className="w-3 h-3 mr-1" />
-                Arenal Region
+                {t("header.region")}
               </Badge>
               <Button
                 variant="outline"
@@ -135,7 +147,7 @@ export default function LavaSetasStore() {
                 disabled={getCartItems().length === 0}
               >
                 <ShoppingCart className="w-4 h-4 mr-2" />
-                Cart
+                {t("header.cart")}
                 {getCartItems().length > 0 && (
                   <Badge className="absolute -top-2 -right-2 h-5 w-5 rounded-full p-0 flex items-center justify-center text-xs">
                     {Object.values(cart).reduce((sum, qty) => sum + qty, 0)}
@@ -160,20 +172,17 @@ export default function LavaSetasStore() {
             />
           </div>
           <h2 className="text-4xl md:text-6xl font-bold text-foreground mb-4">
-            Hongos Gourmet
-            <span className="block text-primary">del Volcán Arenal</span>
+            {t("hero.title")}
+            <span className="block text-primary">{t("hero.subtitle")}</span>
           </h2>
-          <p className="text-lg text-muted-foreground max-w-2xl mx-auto mb-8">
-            Cultivamos hongos premium en El Castillo, aprovechando el clima único cerca del Volcán Arenal y el Lago
-            Arenal para crear sabores excepcionales.
-          </p>
+          <p className="text-lg text-muted-foreground max-w-2xl mx-auto mb-8">{t("hero.description")}</p>
           <div className="flex flex-col sm:flex-row gap-4 justify-center">
             <Button size="lg" className="text-lg px-8">
-              Ver Productos
+              {t("hero.viewProducts")}
             </Button>
             <Button variant="outline" size="lg" className="text-lg px-8 bg-transparent">
               <Phone className="w-5 h-5 mr-2" />
-              WhatsApp: +506 8709 0777
+              {t("hero.whatsapp")}
             </Button>
           </div>
         </div>
@@ -183,10 +192,8 @@ export default function LavaSetasStore() {
       <section className="py-16 px-4 bg-muted/30">
         <div className="container mx-auto">
           <div className="text-center mb-12">
-            <h3 className="text-3xl font-bold text-foreground mb-4">Nuestros Hongos</h3>
-            <p className="text-muted-foreground max-w-2xl mx-auto">
-              Hongos frescos cultivados con técnicas orgánicas en el microclima único de El Castillo
-            </p>
+            <h3 className="text-3xl font-bold text-foreground mb-4">{t("products.title")}</h3>
+            <p className="text-muted-foreground max-w-2xl mx-auto">{t("products.description")}</p>
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
@@ -195,20 +202,22 @@ export default function LavaSetasStore() {
                 <div className="relative">
                   <Image
                     src={product.image || "/placeholder.svg"}
-                    alt={product.name}
+                    alt={t(product.nameKey)}
                     width={300}
                     height={300}
                     className="w-full h-64 object-cover"
                   />
                   {product.inSeason && (
-                    <Badge className="absolute top-3 left-3 bg-accent text-accent-foreground">En Temporada</Badge>
+                    <Badge className="absolute top-3 left-3 bg-accent text-accent-foreground">
+                      {t("products.inSeason")}
+                    </Badge>
                   )}
                 </div>
 
                 <CardHeader>
-                  <CardTitle className="text-xl">{product.name}</CardTitle>
+                  <CardTitle className="text-xl">{t(product.nameKey)}</CardTitle>
                   <CardDescription className="italic text-sm">{product.scientificName}</CardDescription>
-                  <p className="text-sm text-muted-foreground mt-2">{product.description}</p>
+                  <p className="text-sm text-muted-foreground mt-2">{t(product.descriptionKey)}</p>
                 </CardHeader>
 
                 <CardContent>
@@ -222,7 +231,9 @@ export default function LavaSetasStore() {
                           ₡{product.price.toLocaleString()}
                         </span>
                       )}
-                      <p className="text-sm text-muted-foreground">por {product.weight}</p>
+                      <p className="text-sm text-muted-foreground">
+                        {t("products.per")} {product.weight}
+                      </p>
                     </div>
                   </div>
 
@@ -242,7 +253,7 @@ export default function LavaSetasStore() {
                       </Button>
                     </div>
                     <Button onClick={() => addToCart(product.id)} className="flex-1 ml-4">
-                      Agregar
+                      {t("products.add")}
                     </Button>
                   </div>
                 </CardContent>
@@ -260,7 +271,7 @@ export default function LavaSetasStore() {
               <CardHeader>
                 <CardTitle className="flex items-center">
                   <ShoppingCart className="w-5 h-5 mr-2" />
-                  Resumen del Pedido
+                  {t("cart.summary")}
                 </CardTitle>
               </CardHeader>
               <CardContent>
@@ -270,7 +281,7 @@ export default function LavaSetasStore() {
                       product && (
                         <div key={product.id} className="flex justify-between items-center">
                           <span>
-                            {product.name} x{quantity}
+                            {t(product.nameKey)} x{quantity}
                           </span>
                           <span className="font-medium">
                             ₡{((product.inSeason ? product.seasonalPrice : product.price) * quantity).toLocaleString()}
@@ -279,7 +290,7 @@ export default function LavaSetasStore() {
                       ),
                   )}
                   <div className="border-t pt-3 flex justify-between items-center font-bold text-lg">
-                    <span>Total:</span>
+                    <span>{t("cart.total")}</span>
                     <span className="text-primary">₡{getCartTotal().toLocaleString()}</span>
                   </div>
                 </div>
@@ -287,7 +298,7 @@ export default function LavaSetasStore() {
               <CardFooter>
                 <Button onClick={handleWhatsAppOrder} className="w-full text-lg py-6" size="lg">
                   <MessageCircle className="w-5 h-5 mr-2" />
-                  Ordenar por WhatsApp
+                  {t("cart.orderWhatsApp")}
                 </Button>
               </CardFooter>
             </Card>
@@ -300,20 +311,16 @@ export default function LavaSetasStore() {
         <div className="container mx-auto">
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 items-center">
             <div>
-              <h3 className="text-3xl font-bold text-foreground mb-6">Ubicación Privilegiada</h3>
-              <p className="text-muted-foreground mb-6 leading-relaxed">
-                Nuestros hongos crecen en El Castillo, una zona privilegiada entre el Volcán Arenal y el Lago Arenal.
-                Este microclima único, con su humedad constante y suelos volcánicos ricos en minerales, crea las
-                condiciones perfectas para cultivar hongos gourmet de calidad excepcional.
-              </p>
+              <h3 className="text-3xl font-bold text-foreground mb-6">{t("location.title")}</h3>
+              <p className="text-muted-foreground mb-6 leading-relaxed">{t("location.description")}</p>
               <div className="space-y-4">
                 <div className="flex items-center space-x-3">
                   <MapPin className="w-5 h-5 text-primary" />
-                  <span>El Castillo, Provincia de Alajuela</span>
+                  <span>{t("location.province")}</span>
                 </div>
                 <div className="flex items-center space-x-3">
                   <Phone className="w-5 h-5 text-primary" />
-                  <span>+506 8709 0777</span>
+                  <span>{t("location.phone")}</span>
                 </div>
               </div>
             </div>
@@ -342,24 +349,24 @@ export default function LavaSetasStore() {
         <div className="container mx-auto text-center">
           <div className="mb-6">
             <h4 className="text-2xl font-bold text-foreground mb-2">Lava Setas</h4>
-            <p className="text-muted-foreground">Hongos gourmet del Volcán Arenal • El Castillo, Costa Rica</p>
+            <p className="text-muted-foreground">{t("footer.tagline")}</p>
           </div>
           <div className="flex flex-col sm:flex-row justify-center items-center space-y-4 sm:space-y-0 sm:space-x-8">
             <div className="flex items-center space-x-2">
               <Phone className="w-4 h-4 text-primary" />
-              <span>+506 8709 0777</span>
+              <span>{t("location.phone")}</span>
             </div>
             <div className="flex items-center space-x-2">
               <MessageCircle className="w-4 h-4 text-primary" />
-              <span>WhatsApp disponible</span>
+              <span>{t("footer.whatsappAvailable")}</span>
             </div>
             <div className="flex items-center space-x-2">
               <MapPin className="w-4 h-4 text-primary" />
-              <span>El Castillo, Alajuela</span>
+              <span>{t("footer.location")}</span>
             </div>
           </div>
           <div className="mt-8 pt-8 border-t border-border text-sm text-muted-foreground">
-            <p>&copy; 2025 Lava Setas. Todos los derechos reservados.</p>
+            <p>{t("footer.copyright")}</p>
           </div>
         </div>
       </footer>
