@@ -1,20 +1,17 @@
 import { streamText } from "ai"
-import { google } from "@ai-sdk/google"
+import { createGoogleGenerativeAI } from "@ai-sdk/google"
+
+export const maxDuration = 30
 
 export async function POST(req: Request) {
   try {
-    const { messages } = await req.json()
+    const { messages, language } = await req.json()
 
     const apiKey =
       process.env.VITE_GEMINI_API_KEY || process.env.GEMINI_API_KEY || process.env.GOOGLE_GENERATIVE_AI_API_KEY
 
     console.log("[v0] API Key available:", !!apiKey)
     console.log("[v0] API Key length:", apiKey?.length || 0)
-    console.log("[v0] Environment variables available:", {
-      VITE_GEMINI_API_KEY: !!process.env.VITE_GEMINI_API_KEY,
-      GEMINI_API_KEY: !!process.env.GEMINI_API_KEY,
-      GOOGLE_GENERATIVE_AI_API_KEY: !!process.env.GOOGLE_GENERATIVE_AI_API_KEY,
-    })
 
     if (!apiKey) {
       console.error("[v0] No API key found in environment variables")
@@ -24,16 +21,13 @@ export async function POST(req: Request) {
       })
     }
 
-    const googleAI = google({
+    const google = createGoogleGenerativeAI({
       apiKey: apiKey,
     })
 
-    console.log("[v0] Attempting to call Gemini API with messages:", messages.length)
-
-    const result = await streamText({
-      model: googleAI("gemini-1.5-flash"),
-      messages,
-      system: `You are a helpful AI assistant for Lava Setas, a gourmet mushroom store in El Castillo, Costa Rica. 
+    const systemPrompt =
+      language === "en"
+        ? `You are a helpful AI assistant for Lava Setas, a gourmet mushroom store in El Castillo, Costa Rica. 
 
 Store Information:
 - Location: El Castillo, near Arenal Volcano and Lake Arenal
@@ -50,18 +44,36 @@ You should:
 - Answer questions about mushroom cultivation and storage
 - Be friendly and knowledgeable about Costa Rican culture and cuisine
 
-Respond in Spanish when customers write in Spanish, English when they write in English.`,
+IMPORTANT: Always respond in English only.`
+        : `Eres un asistente de IA útil para Lava Setas, una tienda de hongos gourmet en El Castillo, Costa Rica.
+
+Información de la tienda:
+- Ubicación: El Castillo, cerca del Volcán Arenal y Lago Arenal
+- Productos: Ostra Gris (₡3,500/₡3,000 estacional), Ostra Blanca (₡3,800/₡3,200 estacional), Melena de León (₡4,500/₡4,000 estacional)
+- Todos los hongos son orgánicos, cultivados en suelo volcánico
+- Pedidos vía WhatsApp: +506 8709 0777
+- Paquetes: 250g para hongos ostra, 200g para Melena de León
+
+Debes:
+- Ayudar a los clientes a aprender sobre variedades de hongos, métodos de cocción y beneficios nutricionales
+- Proporcionar información sobre disponibilidad estacional y precios
+- Guiar a los clientes sobre cómo hacer pedidos vía WhatsApp
+- Compartir información sobre las condiciones únicas de cultivo cerca del Volcán Arenal
+- Responder preguntas sobre cultivo y almacenamiento de hongos
+- Ser amigable y conocedor de la cultura y cocina costarricense
+
+IMPORTANTE: Siempre responde únicamente en español.`
+
+    const result = await streamText({
+      model: google("gemini-1.5-flash"),
+      messages,
+      system: systemPrompt,
     })
 
     console.log("[v0] Gemini API call successful")
-    return result.toDataStreamResponse()
+    return result.toTextStreamResponse()
   } catch (error) {
-    console.error("[v0] Chat API error details:", {
-      message: error.message,
-      name: error.name,
-      stack: error.stack,
-      cause: error.cause,
-    })
+    console.error("[v0] Chat API error details:", error.message)
 
     return new Response(
       JSON.stringify({

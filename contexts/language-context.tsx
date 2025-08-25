@@ -63,6 +63,23 @@ const translations = {
     "whatsapp.greeting": "¡Hola! Me gustaría hacer un pedido de Lava Setas:",
     "whatsapp.total": "Total:",
     "whatsapp.confirmation": "Por favor confirmen disponibilidad y tiempo de entrega en El Castillo. ¡Gracias!",
+
+    // Chatbot
+    "chatbot.title": "Asistente Lava Setas",
+    "chatbot.subtitle": "Asistente AI con Gemini - Pregúntame sobre hongos",
+    "chatbot.badge": "AI",
+    "chatbot.welcome": "¡Hola! Soy tu asistente de Lava Setas.",
+    "chatbot.canHelp": "Te puedo ayudar con:",
+    "chatbot.help1": "Información sobre nuestros hongos",
+    "chatbot.help2": "Recetas y consejos de cocina",
+    "chatbot.help3": "Precios y disponibilidad",
+    "chatbot.help4": "Cómo hacer pedidos",
+    "chatbot.help5": "Beneficios nutricionales",
+    "chatbot.placeholder": "Escribe tu pregunta...",
+    "chatbot.thinking": "Pensando...",
+    "chatbot.error":
+      "Lo siento, hubo un error. Por favor intenta de nuevo o contacta directamente por WhatsApp: +506 8709 0777",
+    "chatbot.image": "Imagen",
   },
   en: {
     // Header
@@ -116,6 +133,22 @@ const translations = {
     "whatsapp.greeting": "Hello! I would like to place an order from Lava Setas:",
     "whatsapp.total": "Total:",
     "whatsapp.confirmation": "Please confirm availability and delivery time in El Castillo. Thank you!",
+
+    // Chatbot
+    "chatbot.title": "Lava Setas Assistant",
+    "chatbot.subtitle": "AI Assistant with Gemini - Ask me about mushrooms",
+    "chatbot.badge": "AI",
+    "chatbot.welcome": "Hello! I'm your Lava Setas assistant.",
+    "chatbot.canHelp": "I can help you with:",
+    "chatbot.help1": "Information about our mushrooms",
+    "chatbot.help2": "Recipes and cooking tips",
+    "chatbot.help3": "Pricing and availability",
+    "chatbot.help4": "How to place orders",
+    "chatbot.help5": "Nutritional benefits",
+    "chatbot.placeholder": "Type your question...",
+    "chatbot.thinking": "Thinking...",
+    "chatbot.error": "Sorry, there was an error. Please try again or contact directly via WhatsApp: +506 8709 0777",
+    "chatbot.image": "Image",
   },
 }
 

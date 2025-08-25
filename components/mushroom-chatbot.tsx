@@ -9,6 +9,7 @@ import { Input } from "@/components/ui/input"
 import { ScrollArea } from "@/components/ui/scroll-area"
 import { MessageCircle, Send, X, ImageIcon, Loader2 } from "lucide-react"
 import { Badge } from "@/components/ui/badge"
+import { useLanguage } from "@/contexts/language-context"
 
 interface Message {
   id: string
@@ -17,6 +18,7 @@ interface Message {
 }
 
 export function MushroomChatbot() {
+  const { language, t } = useLanguage()
   const [isOpen, setIsOpen] = useState(false)
   const [messages, setMessages] = useState<Message[]>([])
   const [input, setInput] = useState("")
@@ -56,6 +58,7 @@ export function MushroomChatbot() {
             role: msg.role,
             content: msg.content,
           })),
+          language: language,
         }),
       })
 
@@ -80,33 +83,19 @@ export function MushroomChatbot() {
           const { done, value } = await reader.read()
           if (done) break
 
-          const chunk = decoder.decode(value)
-          const lines = chunk.split("\n")
-
-          for (const line of lines) {
-            if (line.startsWith("0:")) {
-              try {
-                const data = JSON.parse(line.slice(2))
-                if (data.type === "textDelta" && data.textDelta) {
-                  assistantContent += data.textDelta
-                  setMessages((prev) =>
-                    prev.map((msg) => (msg.id === assistantMessage.id ? { ...msg, content: assistantContent } : msg)),
-                  )
-                }
-              } catch (e) {
-                // Skip invalid JSON lines
-              }
-            }
-          }
+          const chunk = decoder.decode(value, { stream: true })
+          assistantContent += chunk
+          setMessages((prev) =>
+            prev.map((msg) => (msg.id === assistantMessage.id ? { ...msg, content: assistantContent } : msg)),
+          )
         }
       }
     } catch (error) {
-      console.error("Chat error:", error)
+      console.error("[v0] Chat error:", error)
       const errorMessage: Message = {
         id: (Date.now() + 1).toString(),
         role: "assistant",
-        content:
-          "Lo siento, hubo un error. Por favor intenta de nuevo o contacta directamente por WhatsApp: +506 8709 0777",
+        content: t("chatbot.error"),
       }
       setMessages((prev) => [...prev, errorMessage])
     } finally {
@@ -125,7 +114,7 @@ export function MushroomChatbot() {
         >
           <MessageCircle className="h-6 w-6" />
         </Button>
-        <Badge className="absolute -top-2 -left-2 bg-accent text-accent-foreground">AI Assistant</Badge>
+        <Badge className="absolute -top-2 -left-2 bg-accent text-accent-foreground">{t("chatbot.badge")}</Badge>
       </div>
     )
   }
@@ -137,7 +126,7 @@ export function MushroomChatbot() {
           <div className="flex items-center justify-between">
             <CardTitle className="text-lg flex items-center">
               <MessageCircle className="h-5 w-5 mr-2" />
-              Asistente Lava Setas
+              {t("chatbot.title")}
             </CardTitle>
             <Button
               variant="ghost"
@@ -148,7 +137,7 @@ export function MushroomChatbot() {
               <X className="h-4 w-4" />
             </Button>
           </div>
-          <p className="text-sm text-primary-foreground/90">Asistente AI con Gemini - Pregúntame sobre hongos</p>
+          <p className="text-sm text-primary-foreground/90">{t("chatbot.subtitle")}</p>
         </CardHeader>
 
         <CardContent className="p-0">
@@ -156,14 +145,14 @@ export function MushroomChatbot() {
             <div className="space-y-4">
               {messages.length === 0 && (
                 <div className="text-center text-muted-foreground text-sm">
-                  <p className="mb-2">¡Hola! Soy tu asistente AI de Lava Setas.</p>
-                  <p>Puedo ayudarte con:</p>
+                  <p className="mb-2">{t("chatbot.welcome")}</p>
+                  <p>{t("chatbot.canHelp")}</p>
                   <ul className="text-left mt-2 space-y-1">
-                    <li>• Información sobre hongos</li>
-                    <li>• Recetas y preparación</li>
-                    <li>• Precios y disponibilidad</li>
-                    <li>• Cómo hacer pedidos</li>
-                    <li>• Beneficios nutricionales</li>
+                    <li>• {t("chatbot.help1")}</li>
+                    <li>• {t("chatbot.help2")}</li>
+                    <li>• {t("chatbot.help3")}</li>
+                    <li>• {t("chatbot.help4")}</li>
+                    <li>• {t("chatbot.help5")}</li>
                   </ul>
                 </div>
               )}
@@ -184,7 +173,7 @@ export function MushroomChatbot() {
                 <div className="flex justify-start">
                   <div className="bg-muted text-muted-foreground rounded-lg px-3 py-2 text-sm flex items-center">
                     <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                    Gemini está pensando...
+                    {t("chatbot.thinking")}
                   </div>
                 </div>
               )}
@@ -194,7 +183,9 @@ export function MushroomChatbot() {
           <div className="border-t p-4">
             {selectedImage && (
               <div className="mb-2 p-2 bg-muted rounded-lg flex items-center justify-between">
-                <span className="text-sm text-muted-foreground">Imagen: {selectedImage.name}</span>
+                <span className="text-sm text-muted-foreground">
+                  {t("chatbot.image")}: {selectedImage.name}
+                </span>
                 <Button variant="ghost" size="sm" onClick={() => setSelectedImage(null)}>
                   <X className="h-3 w-3" />
                 </Button>
@@ -206,7 +197,7 @@ export function MushroomChatbot() {
                 <Input
                   value={input}
                   onChange={(e) => setInput(e.target.value)}
-                  placeholder="Escribe tu pregunta..."
+                  placeholder={t("chatbot.placeholder")}
                   disabled={isLoading}
                   className="flex-1"
                 />
