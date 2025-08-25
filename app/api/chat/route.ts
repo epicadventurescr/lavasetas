@@ -5,8 +5,12 @@ export async function POST(req: Request) {
   try {
     const { messages } = await req.json()
 
+    const googleAI = google({
+      apiKey: process.env.VITE_GEMINI_API_KEY || process.env.GEMINI_API_KEY || process.env.GOOGLE_GENERATIVE_AI_API_KEY,
+    })
+
     const result = await streamText({
-      model: google("gemini-1.5-flash"),
+      model: googleAI("gemini-1.5-flash"),
       messages,
       system: `You are a helpful AI assistant for Lava Setas, a gourmet mushroom store in El Castillo, Costa Rica. 
 

@@ -46,16 +46,60 @@ export function MushroomChatbot() {
     setIsLoading(true)
 
     try {
-      // Simple chatbot responses without AI SDK dependency
-      const response = await getSimpleResponse(userMessage.content)
+      const response = await fetch("/api/chat", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          messages: [...messages, userMessage].map((msg) => ({
+            role: msg.role,
+            content: msg.content,
+          })),
+        }),
+      })
+
+      if (!response.ok) {
+        throw new Error("Failed to get response from AI")
+      }
+
+      const reader = response.body?.getReader()
+      const decoder = new TextDecoder()
+      let assistantContent = ""
 
       const assistantMessage: Message = {
         id: (Date.now() + 1).toString(),
         role: "assistant",
-        content: response,
+        content: "",
       }
 
       setMessages((prev) => [...prev, assistantMessage])
+
+      if (reader) {
+        while (true) {
+          const { done, value } = await reader.read()
+          if (done) break
+
+          const chunk = decoder.decode(value)
+          const lines = chunk.split("\n")
+
+          for (const line of lines) {
+            if (line.startsWith("0:")) {
+              try {
+                const data = JSON.parse(line.slice(2))
+                if (data.type === "textDelta" && data.textDelta) {
+                  assistantContent += data.textDelta
+                  setMessages((prev) =>
+                    prev.map((msg) => (msg.id === assistantMessage.id ? { ...msg, content: assistantContent } : msg)),
+                  )
+                }
+              } catch (e) {
+                // Skip invalid JSON lines
+              }
+            }
+          }
+        }
+      }
     } catch (error) {
       console.error("Chat error:", error)
       const errorMessage: Message = {
@@ -69,103 +113,6 @@ export function MushroomChatbot() {
       setIsLoading(false)
       setSelectedImage(null)
     }
-  }
-
-  // Simple response system for common mushroom store questions
-  const getSimpleResponse = async (question: string): Promise<string> => {
-    const lowerQuestion = question.toLowerCase()
-
-    if (lowerQuestion.includes("precio") || lowerQuestion.includes("cost") || lowerQuestion.includes("price")) {
-      return `Nuestros precios actuales son:
-• Hongos Ostra Grises: ₡3,500 (₡3,000 en temporada) - 250g
-• Hongos Ostra Blancos: ₡3,800 (₡3,200 en temporada) - 250g  
-• Melena de León: ₡4,500 (₡4,000 en temporada) - 200g
-
-Los precios de temporada aplican cuando están en su mejor época de cultivo.`
-    }
-
-    if (lowerQuestion.includes("pedido") || lowerQuestion.includes("order") || lowerQuestion.includes("comprar")) {
-      return `Para hacer un pedido:
-1. Agrega los hongos que deseas al carrito en nuestra página
-2. Haz clic en "Ordenar por WhatsApp"
-3. Se abrirá WhatsApp con tu pedido pre-escrito
-4. Envía el mensaje al +506 8709 0777
-5. Confirmaremos disponibilidad y tiempo de entrega
-
-¡Es muy fácil y rápido!`
-    }
-
-    if (
-      lowerQuestion.includes("receta") ||
-      lowerQuestion.includes("cocinar") ||
-      lowerQuestion.includes("recipe") ||
-      lowerQuestion.includes("cook")
-    ) {
-      return `¡Excelente pregunta! Aquí tienes algunas ideas:
-
-🍄 **Hongos Ostra**: Perfectos salteados con ajo y hierbas, en sopas, o en stir-fry
-🍄 **Melena de León**: Tiene textura similar al marisco - pruébalo a la plancha con limón
-🍄 **Preparación general**: Limpia suavemente, corta y cocina a fuego medio-alto
-
-¿Te interesa alguna receta específica? ¡Pregúntame!`
-    }
-
-    if (
-      lowerQuestion.includes("beneficio") ||
-      lowerQuestion.includes("salud") ||
-      lowerQuestion.includes("health") ||
-      lowerQuestion.includes("nutrition")
-    ) {
-      return `Los hongos gourmet son súper nutritivos:
-
-✅ **Proteína completa** - Todos los aminoácidos esenciales
-✅ **Vitaminas B** - Especialmente B12 en Melena de León  
-✅ **Antioxidantes** - Protegen contra el envejecimiento
-✅ **Fibra** - Buena para la digestión
-✅ **Minerales** - Potasio, fósforo, selenio
-
-La Melena de León es especialmente conocida por apoyar la salud cerebral.`
-    }
-
-    if (
-      lowerQuestion.includes("ubicación") ||
-      lowerQuestion.includes("location") ||
-      lowerQuestion.includes("donde") ||
-      lowerQuestion.includes("where")
-    ) {
-      return `Estamos ubicados en El Castillo, Provincia de Alajuela, Costa Rica.
-
-🌋 Cerca del Volcán Arenal y Lago Arenal
-🌿 Aprovechamos el microclima único de la zona
-🚚 Hacemos entregas locales en El Castillo
-📱 Contacto: +506 8709 0777 (WhatsApp)
-
-El suelo volcánico y la humedad constante crean condiciones perfectas para nuestros hongos.`
-    }
-
-    if (
-      lowerQuestion.includes("temporada") ||
-      lowerQuestion.includes("season") ||
-      lowerQuestion.includes("disponible")
-    ) {
-      return `Nuestros hongos tienen diferentes temporadas:
-
-🟢 **En temporada ahora**: Hongos Ostra Grises y Melena de León (precios especiales)
-🟡 **Fuera de temporada**: Hongos Ostra Blancos (precio regular)
-
-Las temporadas dependen del clima y condiciones de cultivo. ¡Contacta por WhatsApp para confirmar disponibilidad actual!`
-    }
-
-    // Default response
-    return `¡Hola! Soy el asistente de Lava Setas. Puedo ayudarte con:
-
-• **Precios y productos** - Información sobre nuestros hongos
-• **Pedidos** - Cómo ordenar por WhatsApp  
-• **Recetas** - Ideas para cocinar hongos
-• **Beneficios** - Información nutricional
-• **Ubicación** - Dónde estamos en El Castillo
-
-¿En qué te puedo ayudar específicamente? O contacta directamente: +506 8709 0777`
   }
 
   if (!isOpen) {
@@ -201,7 +148,7 @@ Las temporadas dependen del clima y condiciones de cultivo. ¡Contacta por Whats
               <X className="h-4 w-4" />
             </Button>
           </div>
-          <p className="text-sm text-primary-foreground/90">Pregúntame sobre hongos, recetas y pedidos</p>
+          <p className="text-sm text-primary-foreground/90">Asistente AI con Gemini - Pregúntame sobre hongos</p>
         </CardHeader>
 
         <CardContent className="p-0">
@@ -209,13 +156,14 @@ Las temporadas dependen del clima y condiciones de cultivo. ¡Contacta por Whats
             <div className="space-y-4">
               {messages.length === 0 && (
                 <div className="text-center text-muted-foreground text-sm">
-                  <p className="mb-2">¡Hola! Soy tu asistente de Lava Setas.</p>
+                  <p className="mb-2">¡Hola! Soy tu asistente AI de Lava Setas.</p>
                   <p>Puedo ayudarte con:</p>
                   <ul className="text-left mt-2 space-y-1">
                     <li>• Información sobre hongos</li>
                     <li>• Recetas y preparación</li>
                     <li>• Precios y disponibilidad</li>
                     <li>• Cómo hacer pedidos</li>
+                    <li>• Beneficios nutricionales</li>
                   </ul>
                 </div>
               )}
@@ -236,7 +184,7 @@ Las temporadas dependen del clima y condiciones de cultivo. ¡Contacta por Whats
                 <div className="flex justify-start">
                   <div className="bg-muted text-muted-foreground rounded-lg px-3 py-2 text-sm flex items-center">
                     <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                    Escribiendo...
+                    Gemini está pensando...
                   </div>
                 </div>
               )}
